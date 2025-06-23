@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class Usuario extends Authenticatable
 {
+    use HasApiTokens;
     use HasFactory;
 
     protected $table = 'Tb_usuarios';
@@ -31,9 +33,13 @@ class Usuario extends Authenticatable
     ];
 
     protected $hidden = ['password', 'remember_token'];
-
+    public function getAuthIdentifierName()
+{
+    return 'usuario';
+}
     public function tipoUsuario()
     {
         return $this->belongsTo(TipoUsuario::class, 'Id_Tipo_Usuario');
     }
+
 }
