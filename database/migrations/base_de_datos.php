@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('Apellido_materno');
             $table->string('nombres');
             $table->string('email');
-            $table->timestamp('usuario');
+            $table->string('usuario');
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
