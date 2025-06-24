@@ -2,17 +2,34 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\TipoUsuarioController;
-use App\Http\Controllers\AuthController;
 
+/*
+|--------------------------------------------------------------------------
+| Rutas públicas (sin autenticación)
+|--------------------------------------------------------------------------
+*/
 Route::post('/login', [AuthController::class, 'login']);
-Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
-Route::apiResource('tipo-usuarios', TipoUsuarioController::class);
 
-Route::apiResource('usuarios', UsuarioController::class);
+/*
+|--------------------------------------------------------------------------
+| Rutas protegidas con Sanctum
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
 
+    // Cerrar sesión
+    Route::post('/logout', [AuthController::class, 'logout']);
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+    // Obtener datos del usuario autenticado
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    // Gestión de usuarios y tipos
+    Route::apiResource('usuarios', UsuarioController::class);
+    Route::put('/usuarios/{id}/cambiar-password', [UsuarioController::class, 'cambiarPassword']);
+    Route::apiResource('tipo-usuarios', TipoUsuarioController::class);
+});

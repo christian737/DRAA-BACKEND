@@ -10,25 +10,42 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $request->validate([
-            'usuario' => 'required|string',
-            'password' => 'required|string'
-        ]);
+        try {
+            $request->validate([
+                'usuario' => 'required|string',
+                'password' => 'required|string'
+            ]);
 
-        $usuario = \App\Models\Usuario::where('usuario', $request->usuario)->first();
+            $usuario = Usuario::where('usuario', $request->usuario)->first();
 
-        if (!$usuario || !\Hash::check($request->password, $usuario->password)) {
+            if (!$usuario || !Hash::check($request->password, $usuario->password)) {
+                return response()->json([
+                    'message' => 'Usuario o contraseña incorrectos'
+                ], 401);
+            }
+
+            // Elimina tokens anteriores (opcional, por seguridad)
+            $usuario->tokens()->delete();
+
+            $token = $usuario->createToken('api_token')->plainTextToken;
+
             return response()->json([
-                'message' => 'Usuario o contraseña incorrectos'
-            ], 401);
+                'usuario' => $usuario,
+                'token' => $token
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'Error interno',
+                'details' => $e->getMessage(),
+            ], 500);
         }
+    }
 
-        $token = $usuario->createToken('api_token')->plainTextToken;
+    public function logout(Request $request)
+    {
+        // Elimina todos los tokens del usuario autenticado
+        $request->user()->tokens()->delete();
 
-        return response()->json([
-            'usuario' => $usuario,
-            'token' => $token
-        ]);
+        return response()->json(['message' => 'Sesión cerrada correctamente']);
     }
 }
-     
