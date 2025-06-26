@@ -5,7 +5,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\TipoUsuarioController;
+use App\Http\Controllers\PeriodoController;
+use App\Http\Controllers\FacultadController;
 
+Route::apiResource('facultades', FacultadController::class);
+
+Route::apiResource('periodos', PeriodoController::class);
 /*
 |--------------------------------------------------------------------------
 | Rutas públicas (sin autenticación)
