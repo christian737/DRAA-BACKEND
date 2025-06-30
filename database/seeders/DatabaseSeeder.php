@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         UsuarioSeeder::class, 
         PeriodoSeeder::class, 
         FacultadSeeder::class, 
+        TbEscuelaSeeder::class, 
     ]);
 
 

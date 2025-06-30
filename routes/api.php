@@ -7,7 +7,9 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\TipoUsuarioController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\FacultadController;
+use App\Http\Controllers\EscuelaController;
 
+Route::apiResource('escuelas', EscuelaController::class);
 Route::apiResource('facultades', FacultadController::class);
 
 Route::apiResource('periodos', PeriodoController::class);
