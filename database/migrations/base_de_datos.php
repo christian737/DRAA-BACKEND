@@ -19,7 +19,14 @@ return new class extends Migration
 
             
         });
-
+            Schema::create('Tb_Sedes', function (Blueprint $table) {
+            $table->id();
+            $table->string('Sede', 100)->nullable();
+            $table->boolean('activo')->default(false);
+            $table->string('created_by', 50)->nullable();
+            $table->string('updated_by', 50)->nullable();
+            $table->timestamps();
+        });
             Schema::create('Tb_Tipo_usuarios', function (Blueprint $table) {
             $table->id();
             $table->string('descripcion', 100)->nullable();
@@ -49,6 +56,7 @@ return new class extends Migration
             $table->boolean('activo')->default(false);
             $table->string('created_by', 50)->nullable();
             $table->string('updated_by', 50)->nullable();
+            
         });
 
             Schema::create('Tb_periodos', function (Blueprint $table) {
@@ -125,7 +133,6 @@ return new class extends Migration
 
             Schema::create('Tb_Modalidad_Ingreso', function (Blueprint $table) {
             $table->id();
-            $table->string('Cod');
             $table->string('Modalidad');
             $table->boolean('activo')->default(false);
             $table->string('created_by', 50)->nullable();
@@ -145,6 +152,7 @@ return new class extends Migration
             Schema::create('Tb_Estudiantes', function (Blueprint $table) {
             $table->id();
             $table->string('Cod_uni')->unique();
+            $table->integer('Tipo_documento_identidad');
             $table->string('Dni');
             $table->string('Apellido_paterno');
             $table->string('Apellido_materno');
@@ -155,17 +163,22 @@ return new class extends Migration
             $table->string('Direccion');
             $table->string('sexo');
             $table->date('Fecha_nacimiento');
+            $table->foreignId('Id_Sede')->nullable()->index()->constrained('Tb_Sedes')->onDelete('cascade');
             $table->foreignId('Id_distrito')->nullable()->index()->constrained('Tb_Distrito')->onDelete('cascade');
             $table->foreignId('Id_Escuela')->nullable()->index()->constrained('Tb_Escuela')->onDelete('cascade');
             $table->foreignId('Id_Periodo_Ingreso')->nullable()->index()->constrained('Tb_periodos')->onDelete('cascade');
             $table->foreignId('Id_Periodo_Egreso')->nullable()->index()->constrained('Tb_periodos')->onDelete('cascade');
             $table->foreignId('Id_Curriculum')->nullable()->index()->constrained('Tb_Curriculum')->onDelete('cascade');
             $table->foreignId('Id_modalidad_ingreso')->nullable()->index()->constrained('Tb_Modalidad_Ingreso')->onDelete('cascade'); ;
-            $table->Integer('Es_discapasitado')->unsigned();
-            $table->string('Discapacidad');
-            $table->Integer('Es_etnia')->unsigned();
-            $table->string('etnia');
+            $table->Integer('Es_discapasitado')->nullable();
+            $table->string('Discapacidad')->nullable();
+            $table->Integer('Es_etnia')->nullable();
+            $table->string('etnia')->nullable();
             $table->string('foto')->nullable();
+            $table->string('created_by', 50)->nullable();
+            $table->string('updated_by', 50)->nullable();
+            $table->timestamps();
+
 
         });
 
@@ -258,6 +271,7 @@ return new class extends Migration
         Schema::dropIfExists('Tb_Tipo_usuarios');
         Schema::dropIfExists('Tb_periodos');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('Tb_Sedes');              // No depende de ninguna tabla
         Schema::dropIfExists('Tb_SubCategorias');       // Depende de: Tb_Categorias
         Schema::dropIfExists('Tb_Categorias');          // Depende de: Tb_SubCategorias
         Schema::dropIfExists('Tb_Estado_Documento');   // No depende de ninguna tabla

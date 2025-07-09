@@ -21,6 +21,14 @@ class DatabaseSeeder extends Seeder
         PeriodoSeeder::class, 
         FacultadSeeder::class, 
         TbEscuelaSeeder::class, 
+        DepartamentoSeeder::class, 
+        ProvinciaSeeder::class, 
+        DistritoSeeder::class, 
+        ModalidadIngresoSeeder::class, 
+        CurriculumSeeder::class, 
+        EstadoEstudianteSeeder::class, 
+        SedeSeeder::class, 
+        EstudianteSeeder2025::class, 
     ]);
 
 

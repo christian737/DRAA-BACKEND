@@ -8,7 +8,78 @@ use App\Http\Controllers\TipoUsuarioController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\EscuelaController;
+use App\Http\Controllers\DepartamentoController;
+use App\Http\Controllers\ProvinciaController;
+use App\Http\Controllers\DistritoController;
+use App\Http\Controllers\ModalidadIngresoController;
+use App\Http\Controllers\CurriculumController;
+use App\Http\Controllers\EstadoEstudianteController;
+use App\Http\Controllers\SedeController;
 
+Route::prefix('sedes')->group(function () {
+    Route::get('/', [SedeController::class, 'index']);
+    Route::post('/', [SedeController::class, 'store']);
+    Route::get('{id}', [SedeController::class, 'show']);
+    Route::put('{id}', [SedeController::class, 'update']);
+    Route::patch('{id}/toggle', [SedeController::class, 'toggleActivo']);
+    Route::delete('{id}', [SedeController::class, 'destroy']);
+});
+
+Route::prefix('estado-estudiante')->group(function () {
+    Route::get('/', [EstadoEstudianteController::class, 'index']);
+    Route::post('/', [EstadoEstudianteController::class, 'store']);
+    Route::get('{id}', [EstadoEstudianteController::class, 'show']);
+    Route::put('{id}', [EstadoEstudianteController::class, 'update']);
+    Route::delete('{id}', [EstadoEstudianteController::class, 'destroy']);
+});
+
+Route::prefix('curriculums')->group(function () {
+    Route::get('/', [CurriculumController::class, 'index']);
+    Route::post('/', [CurriculumController::class, 'store']);
+    Route::get('{id}', [CurriculumController::class, 'show']);
+    Route::put('{id}', [CurriculumController::class, 'update']);
+    Route::patch('{id}/toggle', [CurriculumController::class, 'toggleActivo']);
+    Route::delete('{id}', [CurriculumController::class, 'destroy']);
+    Route::get('/escuela/{id_escuela}', [CurriculumController::class, 'getByEscuela']);
+    Route::get('/escuela/{id_escuela}/activos', [CurriculumController::class, 'getActivosByEscuela']);
+});
+
+Route::prefix('modalidades')->group(function () {
+    Route::get('/', [ModalidadIngresoController::class, 'index']);
+    Route::post('/', [ModalidadIngresoController::class, 'store']);
+    Route::get('{id}', [ModalidadIngresoController::class, 'show']);
+    Route::put('{id}', [ModalidadIngresoController::class, 'update']);
+    Route::patch('{id}/toggle', [ModalidadIngresoController::class, 'toggleActivo']);
+    Route::delete('{id}', [ModalidadIngresoController::class, 'destroy']);
+});
+
+Route::prefix('distritos')->group(function () {
+    Route::get('/', [DistritoController::class, 'index']);
+    Route::post('/', [DistritoController::class, 'store']);
+    Route::get('{id}', [DistritoController::class, 'show']);
+    Route::put('{id}', [DistritoController::class, 'update']);
+    Route::patch('{id}/toggle', [DistritoController::class, 'toggleActivo']);
+    Route::delete('{id}', [DistritoController::class, 'destroy']);
+    Route::get('/provincia/{id_provincia}', [DistritoController::class, 'getByProvincia']);
+    Route::get('/provincia/{id_provincia}/activos', [DistritoController::class, 'getActivosByProvincia']);
+});
+
+Route::prefix('provincias')->group(function () {
+    Route::get('/', [ProvinciaController::class, 'index']);
+    Route::post('/', [ProvinciaController::class, 'store']);
+    Route::get('{id}', [ProvinciaController::class, 'show']);
+    Route::put('{id}', [ProvinciaController::class, 'update']);
+    Route::patch('{id}/toggle', [ProvinciaController::class, 'toggleActivo']);
+    Route::delete('{id}', [ProvinciaController::class, 'destroy']);
+});
+Route::prefix('departamentos')->group(function () {
+    Route::get('/', [DepartamentoController::class, 'index']);
+    Route::post('/', [DepartamentoController::class, 'store']);
+    Route::get('{id}', [DepartamentoController::class, 'show']);
+    Route::put('{id}', [DepartamentoController::class, 'update']);
+    Route::patch('{id}/toggle', [DepartamentoController::class, 'toggleActivo']);
+    Route::delete('{id}', [DepartamentoController::class, 'destroy']);
+});
 Route::apiResource('escuelas', EscuelaController::class);
 Route::apiResource('facultades', FacultadController::class);
 
