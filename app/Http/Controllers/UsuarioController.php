@@ -15,6 +15,11 @@ class UsuarioController extends Controller
             ->map(function ($user) {
                 $user->tienePassword = true;
                 unset($user->password); // importante: nunca devuelvas la real
+
+                if ($user->foto) {
+                    $user->foto_url = asset('uploads/usuarios/' . $user->foto);
+                }
+
                 return $user;
             });
     }
@@ -31,10 +36,17 @@ class UsuarioController extends Controller
                 'usuario' => 'required|unique:Tb_usuarios,usuario',
                 'password' => 'required|min:6',
                 'Id_Tipo_Usuario' => 'required|exists:Tb_tipo_usuarios,id',
+                'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
             ]);
 
-
             $validated['password'] = bcrypt($validated['password']);
+
+            if ($request->hasFile('foto')) {
+                $file = $request->file('foto');
+                $filename = $validated['Dni'] . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/usuarios'), $filename);
+                $validated['foto'] = $filename;
+            }
 
             $usuario = Usuario::create($validated);
 
@@ -48,26 +60,32 @@ class UsuarioController extends Controller
         }
     }
 
-
     public function show($id)
     {
-        return Usuario::with('tipoUsuario')->findOrFail($id);
+        $usuario = Usuario::with('tipoUsuario')->findOrFail($id);
+
+        if ($usuario->foto) {
+            $usuario->foto_url = asset('uploads/usuarios/' . $usuario->foto);
+        }
+
+        return $usuario;
     }
 
     public function update(Request $request, $id)
     {
         $usuario = Usuario::findOrFail($id);
 
-        $data = $request->except(['password', 'foto']); // excluimos primero
+        $data = $request->except(['password', 'foto']);
 
-        // Solo actualiza la password si viene una nueva
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->input('password'));
         }
 
-        // Solo actualiza la foto si viene una nueva
-        if ($request->filled('foto')) {
-            $data['foto'] = $request->input('foto');
+        if ($request->hasFile('foto')) {
+            $file = $request->file('foto');
+            $filename = $usuario->Dni . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/usuarios'), $filename);
+            $data['foto'] = $filename;
         }
 
         $usuario->update($data);
@@ -77,7 +95,6 @@ class UsuarioController extends Controller
             'usuario' => $usuario
         ]);
     }
-
 
     public function destroy($id)
     {
@@ -104,6 +121,4 @@ class UsuarioController extends Controller
 
         return response()->json(['message' => 'Contraseña actualizada con éxito']);
     }
-
 }
-

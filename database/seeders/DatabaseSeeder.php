@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
         EstadoEstudianteSeeder::class, 
         SedeSeeder::class, 
         EstudianteSeeder2025::class, 
+        CategoriaSeeder::class, 
+        SubCategoriaSeeder::class, 
     ]);
 
 

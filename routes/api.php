@@ -15,7 +15,46 @@ use App\Http\Controllers\ModalidadIngresoController;
 use App\Http\Controllers\CurriculumController;
 use App\Http\Controllers\EstadoEstudianteController;
 use App\Http\Controllers\SedeController;
+use App\Http\Controllers\EstudianteController;
+use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\SubCategoriaController;
+use App\Http\Controllers\ExpedienteController;
 
+
+Route::prefix('expedientes')->group(function () {
+
+    Route::get('/', [ExpedienteController::class, 'index']);
+    Route::get('/{id}', [ExpedienteController::class, 'show']);
+    Route::post('/', [ExpedienteController::class, 'store']);
+    Route::delete('/{id}', [ExpedienteController::class, 'destroy']);
+});
+
+Route::prefix('subcategorias')->group(function () {
+    Route::get('/', [SubCategoriaController::class, 'index']);
+    Route::post('/', [SubCategoriaController::class, 'store']);
+    Route::get('/{id}', [SubCategoriaController::class, 'show']);
+    Route::put('/{id}', [SubCategoriaController::class, 'update']);
+    Route::delete('/{id}', [SubCategoriaController::class, 'destroy']);
+});
+
+
+Route::prefix('categorias')->group(function () {
+    Route::get('/', [CategoriaController::class, 'index'])->name('categorias.index');
+    Route::post('/', [CategoriaController::class, 'store'])->name('categorias.store');
+    Route::get('/{id}', [CategoriaController::class, 'show'])->name('categorias.show');
+    Route::put('/{id}', [CategoriaController::class, 'update'])->name('categorias.update');
+    Route::delete('/{id}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
+});
+
+Route::prefix('estudiantes')->group(function () {
+    
+
+    Route::post('/', [EstudianteController::class, 'store']);
+    Route::get('/', [EstudianteController::class, 'index']);
+    Route::get('/{id}', [EstudianteController::class, 'show']);
+    Route::put('/{id}', [EstudianteController::class, 'update']);
+    Route::delete('/{id}', [EstudianteController::class, 'destroy']);
+});
 Route::prefix('sedes')->group(function () {
     Route::get('/', [SedeController::class, 'index']);
     Route::post('/', [SedeController::class, 'store']);
