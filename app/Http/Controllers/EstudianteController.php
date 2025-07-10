@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\Validator;
 
 class EstudianteController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $estudiantes = Estudiantes::with([
+        $limit = $request->query('limit');
+
+        $query = Estudiantes::with([
             'estado',
             'sede',
             'distrito',
@@ -19,7 +21,13 @@ class EstudianteController extends Controller
             'periodoEgreso',
             'curriculum',
             'modalidadIngreso'
-        ])->get()->map(function ($e) {
+        ]);
+
+        $estudiantes = $limit
+            ? $query->take((int) $limit)->get()
+            : $query->get();
+
+        $estudiantes->transform(function ($e) {
             $e->foto_url = $this->buildPhotoUrl($e->Dni);
             return $e;
         });
