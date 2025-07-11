@@ -19,6 +19,15 @@ use App\Http\Controllers\EstudianteController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\SubCategoriaController;
 use App\Http\Controllers\ExpedienteController;
+use App\Http\Controllers\EstadoDocumentoController;
+
+Route::prefix('estado-documentos')->group(function () {
+    Route::get('/', [EstadoDocumentoController::class, 'index']);
+    Route::post('/', [EstadoDocumentoController::class, 'store']);
+    Route::get('/{id}', [EstadoDocumentoController::class, 'show']);
+    Route::put('/{id}', [EstadoDocumentoController::class, 'update']);
+    Route::delete('/{id}', [EstadoDocumentoController::class, 'destroy']);
+});
 
 
 Route::prefix('expedientes')->group(function () {

@@ -6,47 +6,57 @@ use App\Models\Expediente;
 use App\Models\Estudiantes;
 use App\Models\SubCategoria;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ExpedienteController extends Controller
 {
     public function index()
     {
-        return response()->json(
-            Expediente::with('estudiante', 'subcategoria')->get()
-        );
+        $expedientes = Expediente::with(['estudiante', 'subcategoria', 'estado'])->get();
+        return response()->json($expedientes);
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'Id_Estudiante' => 'required|exists:Tb_Estudiantes,id',
             'Id_SubCategoria' => 'required|exists:Tb_SubCategorias,id',
-            'Descripcion_documento' => 'nullable|string',
-            'Observacion' => 'nullable|string',
+            'Descripcion_documento' => 'required|string|max:255',
             'Id_estado_documento' => 'required|exists:Tb_Estado_Documento,id',
-            'documento' => 'required|file|mimes:pdf,jpeg,png,jpg,docx|max:5120',
+            'archivo' => 'required|file|mimes:pdf|max:5120', // Máx 5MB
         ]);
 
-        $estudiante = Estudiantes::find($request->Id_Estudiante);
-        $subcategoria = SubCategoria::with('categoria')->find($request->Id_SubCategoria);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-        $dni = $estudiante->Dni;
-        $categoria = str_replace([' ', 'Á', 'É', 'Í', 'Ó', 'Ú'], ['_', 'A', 'E', 'I', 'O', 'U'], strtoupper($subcategoria->categoria->Categoria));
-        $subcategoriaStr = str_replace([' ', 'Á', 'É', 'Í', 'Ó', 'Ú'], ['_', 'A', 'E', 'I', 'O', 'U'], strtoupper($subcategoria->SubCategoria));
+        $estudiante = Estudiantes::findOrFail($request->Id_Estudiante);
+        $subcategoria = SubCategoria::with('categoria')->findOrFail($request->Id_SubCategoria);
 
-        $ruta = "documentos/$dni/$categoria/$subcategoriaStr";
+        $archivo = $request->file('archivo');
+        $extension = $archivo->getClientOriginalExtension();
 
-        $archivo = $request->file('documento');
-        $nombreArchivo = time() . '_' . $archivo->getClientOriginalName();
+        $categoriaNombre = Str::slug($subcategoria->categoria->Categoria, '_');
+        $subcategoriaNombre = Str::slug($subcategoria->SubCategoria, '_');
+        $descripcion = Str::slug($request->Descripcion_documento, '_');
+
+        $ruta = "documentos/{$estudiante->Dni}/{$categoriaNombre}/{$subcategoriaNombre}";
+        $nombreArchivo = "{$descripcion}.{$extension}";
+
+        // Guardar el archivo
         $archivo->move(public_path($ruta), $nombreArchivo);
+
+        $urlDocumento = "{$ruta}/{$nombreArchivo}";
 
         $expediente = Expediente::create([
             'Id_Estudiante' => $request->Id_Estudiante,
             'Id_SubCategoria' => $request->Id_SubCategoria,
             'Descripcion_documento' => $request->Descripcion_documento,
+            'url_documento' => $urlDocumento,
             'Observacion' => $request->Observacion,
             'Id_estado_documento' => $request->Id_estado_documento,
-            'url_documento' => "$ruta/$nombreArchivo",
             'created_by' => auth()->user()->usuario ?? 'Seeder',
             'updated_by' => auth()->user()->usuario ?? 'Seeder',
         ]);
@@ -56,19 +66,52 @@ class ExpedienteController extends Controller
 
     public function show($id)
     {
-        $expediente = Expediente::with('estudiante', 'subcategoria')->find($id);
-        return $expediente ? response()->json($expediente) : response()->json(['message' => 'No encontrado'], 404);
+        $expediente = Expediente::with(['estudiante', 'subcategoria', 'estado'])->find($id);
+        if (!$expediente) {
+            return response()->json(['message' => 'No encontrado'], 404);
+        }
+        return response()->json($expediente);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $expediente = Expediente::findOrFail($id);
+
+        $data = $request->only([
+            'Descripcion_documento', 'Observacion', 'Id_estado_documento', 'Id_SubCategoria'
+        ]);
+
+        if ($request->hasFile('archivo')) {
+            $archivo = $request->file('archivo');
+            $extension = $archivo->getClientOriginalExtension();
+            $subcategoria = SubCategoria::with('categoria')->findOrFail($request->Id_SubCategoria);
+            $categoriaNombre = Str::slug($subcategoria->categoria->Categoria, '_');
+            $subcategoriaNombre = Str::slug($subcategoria->SubCategoria, '_');
+            $descripcion = Str::slug($request->Descripcion_documento, '_');
+            $ruta = "documentos/{$expediente->estudiante->Dni}/{$categoriaNombre}/{$subcategoriaNombre}";
+            $nombreArchivo = "{$descripcion}.{$extension}";
+
+            $archivo->move(public_path($ruta), $nombreArchivo);
+            $data['url_documento'] = "{$ruta}/{$nombreArchivo}";
+        }
+
+        $data['updated_by'] = auth()->user()->usuario ?? 'Seeder';
+
+        $expediente->update($data);
+        return response()->json($expediente);
     }
 
     public function destroy($id)
     {
-        $expediente = Expediente::find($id);
-        if (!$expediente) return response()->json(['message' => 'No encontrado'], 404);
+        $expediente = Expediente::findOrFail($id);
 
-        $ruta = public_path($expediente->url_documento);
-        if (file_exists($ruta)) unlink($ruta);
+        // Eliminar archivo si existe
+        if ($expediente->url_documento && file_exists(public_path($expediente->url_documento))) {
+            unlink(public_path($expediente->url_documento));
+        }
 
         $expediente->delete();
+
         return response()->json(['message' => 'Expediente eliminado correctamente']);
     }
 }
