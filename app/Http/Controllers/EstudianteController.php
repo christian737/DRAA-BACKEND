@@ -10,7 +10,7 @@ class EstudianteController extends Controller
 {
     public function index(Request $request)
     {
-        $limit = $request->query('limit');
+        $busqueda = $request->query('busqueda'); // solo 1 campo de búsqueda
 
         $query = Estudiantes::with([
             'estado',
@@ -23,9 +23,17 @@ class EstudianteController extends Controller
             'modalidadIngreso'
         ]);
 
-        $estudiantes = $limit
-            ? $query->take((int) $limit)->get()
-            : $query->get();
+        if ($busqueda) {
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('Dni', 'like', "%{$busqueda}%")
+                    ->orWhere('Cod_uni', 'like', "%{$busqueda}%")
+                    ->orWhere('nombres', 'like', "%{$busqueda}%")
+                    ->orWhere('Apellido_paterno', 'like', "%{$busqueda}%")
+                    ->orWhere('Apellido_materno', 'like', "%{$busqueda}%");
+            });
+        }
+
+        $estudiantes = $query->take(20)->get(); // opcional: limitar resultados
 
         $estudiantes->transform(function ($e) {
             $e->foto_url = $this->buildPhotoUrl($e->Dni);
@@ -34,6 +42,8 @@ class EstudianteController extends Controller
 
         return response()->json($estudiantes, 200);
     }
+
+
 
     public function store(Request $request)
     {

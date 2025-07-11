@@ -15,7 +15,7 @@ class UsuarioController extends Controller
             ->map(function ($user) {
                 $user->tienePassword = true;
                 unset($user->password); // importante: nunca devuelvas la real
-
+    
                 if ($user->foto) {
                     $user->foto_url = asset('uploads/usuarios/' . $user->foto);
                 }
@@ -105,10 +105,21 @@ class UsuarioController extends Controller
 
     public function cambiarPassword(Request $request, $id)
     {
-        $request->validate([
+        $request->merge(json_decode($request->getContent(), true)); // 👈 NECESARIO
+
+        \Log::info('Datos recibidos:', $request->all());
+
+        $validator = \Validator::make($request->all(), [
             'actual' => 'required|string',
             'nueva' => 'required|string|min:6',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => 'Datos inválidos',
+                'detalles' => $validator->errors()
+            ], 400);
+        }
 
         $usuario = Usuario::findOrFail($id);
 
@@ -121,4 +132,7 @@ class UsuarioController extends Controller
 
         return response()->json(['message' => 'Contraseña actualizada con éxito']);
     }
+
+
+
 }
