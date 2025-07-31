@@ -10,7 +10,12 @@ class EstudianteController extends Controller
 {
     public function index(Request $request)
     {
-        $busqueda = $request->query('busqueda'); // solo 1 campo de búsqueda
+        $busqueda = $request->query('busqueda');
+        $dni = $request->query('dni');
+        $codigo = $request->query('codigo');
+        $nombres = $request->query('nombres');
+        $apellidoPaterno = $request->query('Apellido_paterno');
+        $apellidoMaterno = $request->query('Apellido_materno');
 
         $query = Estudiantes::with([
             'estado',
@@ -23,17 +28,48 @@ class EstudianteController extends Controller
             'modalidadIngreso'
         ]);
 
+        // Búsqueda con campo único `busqueda`
         if ($busqueda) {
             $query->where(function ($q) use ($busqueda) {
-                $q->where('Dni', 'like', "%{$busqueda}%")
-                    ->orWhere('Cod_uni', 'like', "%{$busqueda}%")
-                    ->orWhere('nombres', 'like', "%{$busqueda}%")
-                    ->orWhere('Apellido_paterno', 'like', "%{$busqueda}%")
-                    ->orWhere('Apellido_materno', 'like', "%{$busqueda}%");
+                $palabras = preg_split('/\s+/', trim($busqueda));
+                foreach ($palabras as $palabra) {
+                    $q->where(function ($sub) use ($palabra) {
+                        $sub->where('Dni', 'like', "%{$palabra}%")
+                            ->orWhere('Cod_uni', 'like', "%{$palabra}%")
+                            ->orWhere('nombres', 'like', "%{$palabra}%")
+                            ->orWhere('Apellido_paterno', 'like', "%{$palabra}%")
+                            ->orWhere('Apellido_materno', 'like', "%{$palabra}%");
+                    });
+                }
             });
         }
 
-        $estudiantes = $query->take(20)->get(); // opcional: limitar resultados
+        // Búsqueda individual por parámetros si no hay 'busqueda'
+        if (!$busqueda) {
+            if ($dni) {
+                $query->where('Dni', 'like', "%{$dni}%");
+            }
+
+            if ($codigo) {
+                $query->where('Cod_uni', 'like', "%{$codigo}%");
+            }
+
+            if ($nombres || $apellidoPaterno || $apellidoMaterno) {
+                $query->where(function ($q) use ($nombres, $apellidoPaterno, $apellidoMaterno) {
+                    if ($nombres) {
+                        $q->orWhere('nombres', 'like', "%{$nombres}%");
+                    }
+                    if ($apellidoPaterno) {
+                        $q->orWhere('Apellido_paterno', 'like', "%{$apellidoPaterno}%");
+                    }
+                    if ($apellidoMaterno) {
+                        $q->orWhere('Apellido_materno', 'like', "%{$apellidoMaterno}%");
+                    }
+                });
+            }
+        }
+
+        $estudiantes = $query->take(20)->get();
 
         $estudiantes->transform(function ($e) {
             $e->foto_url = $this->buildPhotoUrl($e->Dni);
@@ -42,8 +78,6 @@ class EstudianteController extends Controller
 
         return response()->json($estudiantes, 200);
     }
-
-
 
     public function store(Request $request)
     {

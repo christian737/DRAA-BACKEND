@@ -29,14 +29,18 @@ Route::prefix('estado-documentos')->group(function () {
     Route::delete('/{id}', [EstadoDocumentoController::class, 'destroy']);
 });
 
+Route::get('/expedientes/estudiante/{id}', [ExpedienteController::class, 'getByEstudiante']);
 
 Route::prefix('expedientes')->group(function () {
-
     Route::get('/', [ExpedienteController::class, 'index']);
     Route::get('/{id}', [ExpedienteController::class, 'show']);
     Route::post('/', [ExpedienteController::class, 'store']);
+    Route::put('/{id}', [ExpedienteController::class, 'update']); // ✅ necesario
     Route::delete('/{id}', [ExpedienteController::class, 'destroy']);
 });
+
+
+
 
 Route::prefix('subcategorias')->group(function () {
     Route::get('/', [SubCategoriaController::class, 'index']);
@@ -56,7 +60,7 @@ Route::prefix('categorias')->group(function () {
 });
 
 Route::prefix('estudiantes')->group(function () {
-    
+
 
     Route::post('/', [EstudianteController::class, 'store']);
     Route::get('/', [EstudianteController::class, 'index']);

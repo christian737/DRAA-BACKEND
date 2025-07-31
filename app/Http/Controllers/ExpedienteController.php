@@ -7,19 +7,33 @@ use App\Models\Estudiantes;
 use App\Models\SubCategoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ExpedienteController extends Controller
 {
     public function index()
     {
-        $expedientes = Expediente::with(['estudiante', 'subcategoria', 'estado'])->get();
-        return response()->json($expedientes);
+        return response()->json(
+            Expediente::with(['estudiante', 'subcategoria', 'estado'])->get()
+        );
+    }
+
+    public function getByEstudiante($id)
+    {
+        return response()->json(
+            Expediente::with(['subcategoria', 'estado'])
+                ->where('Id_Estudiante', $id)
+                ->get()
+        );
     }
 
     public function store(Request $request)
     {
+        // ✅ Si viene un ID, es actualización
+        if ($request->has('id')) {
+            return $this->update($request, $request->id);
+        }
+
         $validator = Validator::make($request->all(), [
             'Id_Estudiante' => 'required|exists:Tb_Estudiantes,id',
             'Id_SubCategoria' => 'required|exists:Tb_SubCategorias,id',
@@ -36,18 +50,17 @@ class ExpedienteController extends Controller
         $subcategoria = SubCategoria::with('categoria')->findOrFail($request->Id_SubCategoria);
 
         $archivo = $request->file('archivo');
-        $extension = $archivo->getClientOriginalExtension();
-
         $categoriaNombre = Str::slug($subcategoria->categoria->Categoria, '_');
         $subcategoriaNombre = Str::slug($subcategoria->SubCategoria, '_');
-        $descripcion = Str::slug($request->Descripcion_documento, '_');
 
         $ruta = "documentos/{$estudiante->Dni}/{$categoriaNombre}/{$subcategoriaNombre}";
-        $nombreArchivo = "{$descripcion}.{$extension}";
+        if (!file_exists(public_path($ruta))) {
+            mkdir(public_path($ruta), 0777, true);
+        }
 
-        // Guardar el archivo
+        // ✅ Guardar con nombre único
+        $nombreArchivo = time() . '_' . $archivo->getClientOriginalName();
         $archivo->move(public_path($ruta), $nombreArchivo);
-
         $urlDocumento = "{$ruta}/{$nombreArchivo}";
 
         $expediente = Expediente::create([
@@ -61,6 +74,7 @@ class ExpedienteController extends Controller
             'updated_by' => auth()->user()->usuario ?? 'Seeder',
         ]);
 
+        $expediente->NombreArchivo = $nombreArchivo;
         return response()->json($expediente, 201);
     }
 
@@ -70,34 +84,61 @@ class ExpedienteController extends Controller
         if (!$expediente) {
             return response()->json(['message' => 'No encontrado'], 404);
         }
+
+        $expediente->NombreArchivo = basename($expediente->url_documento);
         return response()->json($expediente);
     }
-
     public function update(Request $request, $id)
     {
-        $expediente = Expediente::findOrFail($id);
+        // 🔹 Cargar expediente con todas sus relaciones necesarias
+        $expediente = Expediente::with(['estudiante', 'subcategoria.categoria'])->findOrFail($id);
 
+        // 🔹 Datos actualizables
         $data = $request->only([
-            'Descripcion_documento', 'Observacion', 'Id_estado_documento', 'Id_SubCategoria'
+            'Descripcion_documento',
+            'Observacion',
+            'Id_estado_documento',
+            'Id_SubCategoria'
         ]);
 
+        // 🔹 Si cambia la subcategoría, recalcular carpeta
+        if ($request->has('Id_SubCategoria')) {
+            $subcategoria = SubCategoria::with('categoria')->findOrFail($request->Id_SubCategoria);
+        } else {
+            $subcategoria = $expediente->subcategoria;
+        }
+
+        $categoriaNombre = Str::slug($subcategoria->categoria->Categoria, '_');
+        $subcategoriaNombre = Str::slug($subcategoria->SubCategoria, '_');
+        $dniEstudiante = $expediente->estudiante->Dni;
+
+        // 🔹 Si hay nuevo archivo, reemplazar
         if ($request->hasFile('archivo')) {
             $archivo = $request->file('archivo');
-            $extension = $archivo->getClientOriginalExtension();
-            $subcategoria = SubCategoria::with('categoria')->findOrFail($request->Id_SubCategoria);
-            $categoriaNombre = Str::slug($subcategoria->categoria->Categoria, '_');
-            $subcategoriaNombre = Str::slug($subcategoria->SubCategoria, '_');
-            $descripcion = Str::slug($request->Descripcion_documento, '_');
-            $ruta = "documentos/{$expediente->estudiante->Dni}/{$categoriaNombre}/{$subcategoriaNombre}";
-            $nombreArchivo = "{$descripcion}.{$extension}";
 
+            $ruta = "documentos/{$dniEstudiante}/{$categoriaNombre}/{$subcategoriaNombre}";
+            if (!file_exists(public_path($ruta))) {
+                mkdir(public_path($ruta), 0777, true);
+            }
+
+            // 🔹 Borrar archivo anterior si existe
+            if ($expediente->url_documento && file_exists(public_path($expediente->url_documento))) {
+                unlink(public_path($expediente->url_documento));
+            }
+
+            $nombreArchivo = time() . '_' . $archivo->getClientOriginalName();
             $archivo->move(public_path($ruta), $nombreArchivo);
             $data['url_documento'] = "{$ruta}/{$nombreArchivo}";
         }
 
+        // 🔹 Actualizar registro
         $data['updated_by'] = auth()->user()->usuario ?? 'Seeder';
-
         $expediente->update($data);
+
+        // 🔹 Recargar expediente con TODAS las relaciones (subcategoria + categoria)
+        $expediente = Expediente::with(['subcategoria.categoria', 'estado', 'estudiante'])->find($id);
+        $expediente->NombreArchivo = basename($expediente->url_documento);
+
         return response()->json($expediente);
     }
 
@@ -105,13 +146,11 @@ class ExpedienteController extends Controller
     {
         $expediente = Expediente::findOrFail($id);
 
-        // Eliminar archivo si existe
         if ($expediente->url_documento && file_exists(public_path($expediente->url_documento))) {
             unlink(public_path($expediente->url_documento));
         }
 
         $expediente->delete();
-
         return response()->json(['message' => 'Expediente eliminado correctamente']);
     }
 }
