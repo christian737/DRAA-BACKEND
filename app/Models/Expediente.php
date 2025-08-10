@@ -16,9 +16,16 @@ class Expediente extends Model
         'url_documento',
         'Observacion',
         'Id_estado_documento',
+        'Fecha_recepcion', // ← agregado
         'created_by',
         'updated_by',
     ];
+
+
+    protected $casts = [
+        'Fecha_recepcion' => 'date:Y-m-d', // 👈 esto fuerza el formato
+    ];
+
 
     public function estudiante(): BelongsTo
     {
