@@ -19,7 +19,6 @@ class ExpedienteController extends Controller
         $items->transform(function ($exp) {
             $exp->NombreArchivo = $exp->url_documento ? basename($exp->url_documento) : null;
 
-            // Cargar manifest de referencias si existe
             try {
                 $dni = $exp->estudiante?->Dni;
                 $categoriaNombre = Str::slug($exp->subcategoria?->categoria?->Categoria ?? '', '_');
@@ -100,12 +99,10 @@ class ExpedienteController extends Controller
             $rutaBase = "documentos/{$estudiante->Dni}/{$categoriaNombre}/{$subcategoriaNombre}";
             $this->ensureDir($rutaBase);
 
-            // PDF principal del expediente
             $nombreArchivo = time() . '_' . $archivo->getClientOriginalName();
             $archivo->move(public_path($rutaBase), $nombreArchivo);
             $urlDocumento = "{$rutaBase}/{$nombreArchivo}";
 
-            // Regla: Activo => Observacion vacía
             $observacion = ((int) $request->Id_estado_documento === 1) ? "" : ($request->Observacion ?? "");
 
             $expediente = Expediente::create([
@@ -120,11 +117,9 @@ class ExpedienteController extends Controller
                 'updated_by' => auth()->user()->usuario ?? 'Seeder',
             ]);
 
-            // Referencias -> subcarpeta + manifest
             $refs = $this->processReferencesToFolder($request, $rutaBase);
             $this->saveRefsManifest($rutaBase, $refs);
 
-            // Respuesta
             $expediente->NombreArchivo = $nombreArchivo;
             $expediente->Referencias = $refs;
             Log::info('✅ [store] referencias guardadas', $refs);
@@ -243,7 +238,6 @@ class ExpedienteController extends Controller
 
         $expediente->NombreArchivo = $expediente->url_documento ? basename($expediente->url_documento) : null;
 
-        // Cargar manifest de referencias
         try {
             $dni = $expediente->estudiante?->Dni;
             $categoriaNombre = Str::slug($expediente->subcategoria?->categoria?->Categoria ?? '', '_');
@@ -273,7 +267,6 @@ class ExpedienteController extends Controller
         return response()->json(['message' => 'Expediente eliminado correctamente']);
     }
 
-    /* ========================== Helpers ========================== */
 
     private function ensureDir(string $ruta): void
     {
@@ -283,7 +276,6 @@ class ExpedienteController extends Controller
         }
     }
 
-    /** Lee metadata enviada y sube archivos a /referencias; devuelve el array final de refs */
     private function processReferencesToFolder(Request $request, string $rutaBase): array
     {
         $refs = $this->extractRefsMetadata($request);
@@ -314,7 +306,6 @@ class ExpedienteController extends Controller
             }
         }
 
-        // Reindex + normalizar
         $out = [];
         foreach ($refs as $r) {
             $out[] = [
@@ -327,7 +318,6 @@ class ExpedienteController extends Controller
         return $out;
     }
 
-    /** Extrae metadata de refs del request (JSON/Indexados), sin subir archivos */
     private function extractRefsMetadata(Request $request): array
     {
         $out = [];
@@ -345,13 +335,12 @@ class ExpedienteController extends Controller
 
         $indexed = $request->input('referencias');
         if (is_array($indexed)) {
-            $out = $this->normalizeRefs($indexed); // prioridad a indexados
+            $out = $this->normalizeRefs($indexed);
         }
 
         return $out;
     }
 
-    /** Guarda referencias.json */
     private function saveRefsManifest(string $rutaBase, array $refs): void
     {
         $refsDir = public_path("{$rutaBase}/referencias");
@@ -361,7 +350,6 @@ class ExpedienteController extends Controller
         file_put_contents($manifestPath, json_encode($refs, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     }
 
-    /** Carga referencias.json */
     private function loadRefsManifest(string $rutaBase): array
     {
         $manifestPath = public_path("{$rutaBase}/referencias/referencias.json");
@@ -372,7 +360,6 @@ class ExpedienteController extends Controller
         return [];
     }
 
-    /** Normaliza claves a: texto, subcategoria, archivo, url */
     private function normalizeRefs(array $arr): array
     {
         $norm = [];
@@ -393,7 +380,6 @@ class ExpedienteController extends Controller
         return $norm;
     }
 
-    /** Máximo índice numérico presente en un array (para contar refs potenciales) */
     private function maxIndex($arr): int
     {
         if (!is_array($arr) || empty($arr))

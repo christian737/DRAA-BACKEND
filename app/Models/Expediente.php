@@ -16,14 +16,14 @@ class Expediente extends Model
         'url_documento',
         'Observacion',
         'Id_estado_documento',
-        'Fecha_recepcion', // ← agregado
+        'Fecha_recepcion',
         'created_by',
         'updated_by',
     ];
 
 
     protected $casts = [
-        'Fecha_recepcion' => 'date:Y-m-d', // 👈 esto fuerza el formato
+        'Fecha_recepcion' => 'date:Y-m-d',
     ];
 
 
